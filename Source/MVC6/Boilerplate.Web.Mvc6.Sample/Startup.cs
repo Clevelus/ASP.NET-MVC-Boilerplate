@@ -132,7 +132,7 @@
             // $End-CshtmlMinification$
             ConfigureFormatters(mvcBuilder);
 
-            ConfigureAntiforgeryServices(services);
+            ConfigureAntiforgeryServices(services, this.hostingEnvironment);
             ConfigureCustomServices(services);
         }
 
@@ -144,17 +144,20 @@
         /// <param name="loggerfactory">The logger factory.</param>
         public void Configure(IApplicationBuilder application, ILoggerFactory loggerfactory)
         {
-            // $Start-ApplicationInsights$
-            // Add Azure Application Insights to the request pipeline to track HTTP request telemetry data.
-            application.UseApplicationInsightsRequestTelemetry();
-
-            // $End-ApplicationInsights$
             // Give the ASP.NET MVC Boilerplate NuGet package assembly access to the HttpContext, so it can generate 
             // absolute URL's and get the current request path.
             application.UseBoilerplate();
 
             // Add the IIS platform handler to the request pipeline.
             application.UseIISPlatformHandler();
+            // $Start-ApplicationInsights$
+
+            // Add Azure Application Insights to the request pipeline to track HTTP request telemetry data.
+            application.UseApplicationInsightsRequestTelemetry();
+            // Track data about exceptions from the application. Should be configured after all error handling 
+            // middleware in the request pipeline.
+            application.UseApplicationInsightsExceptionTelemetry();
+            // $End-ApplicationInsights$
 
             // Add static files to the request pipeline e.g. hello.html or world.css.
             application.UseStaticFiles();
@@ -163,15 +166,13 @@
             ConfigureDebugging(application, this.hostingEnvironment);
             ConfigureLogging(application, this.hostingEnvironment, loggerfactory, this.configuration);
             ConfigureErrorPages(application, this.hostingEnvironment);
+            // $Start-HttpsEverywhere$
+            ConfigureContentSecurityPolicy(application, this.hostingEnvironment);
+            ConfigureSecurity(application, this.hostingEnvironment);
+            // $End-HttpsEverywhere$
 
             // Add MVC to the request pipeline.
             application.UseMvc();
-            // $Start-ApplicationInsights$
-
-            // Track data about exceptions from the application. Should be configured after all error handling 
-            // middleware in the request pipeline.
-            application.UseApplicationInsightsExceptionTelemetry();
-            // $End-ApplicationInsights$
 
             // Add a 404 Not Found error page for visiting /this-resource-does-not-exist.
             Configure404NotFoundErrorPage(application, this.hostingEnvironment);
